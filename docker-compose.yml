@@ -1,18 +1,26 @@
 # Elasticsearch monitoring stack for docker swarm
 
 
-version: '3.7'
+version: '3.8'
 
 
 configs:
-  metricbeat_config:
+  logstash_config:
     external: true
+  # metricbeat_config:
+  #   external: true
 
 volumes:
   esdata:
     driver: local
   logstash-pipeline:
     driver: local
+
+networks:
+  private:
+  public:
+  traefik-public:
+    external: true
 
 services:
 
@@ -49,41 +57,54 @@ services:
 
   elasticsearch:
     image: elasticsearch:8.2.3
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
     environment:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms2g -Xmx2g
+    networks:
+      - private
+      - public
     volumes:
       - esdata:/usr/share/elasticsearch/data
 
   kibana:
     image: kibana:8.2.3
-    depends_on:
-      - elasticsearch
-    ports:
-      - "5601:5601"
-      # labels:
-      #   - traefik.enable=true
-      #   - traefik.docker.network=traefik-public
-      #   - traefik.constraint-label=traefik-public
-      #   - traefik.http.routers.swarmprom-unsee-http.rule=Host(`unsee.${DOMAIN?Variable not set}`)
-      #   - traefik.http.routers.swarmprom-unsee-http.entrypoints=http
-      #   - traefik.http.routers.swarmprom-unsee-http.middlewares=https-redirect
-      #   - traefik.http.routers.swarmprom-unsee-https.rule=Host(`unsee.${DOMAIN?Variable not set}`)
-      #   - traefik.http.routers.swarmprom-unsee-https.entrypoints=https
-      #   - traefik.http.routers.swarmprom-unsee-https.tls=true
-      #   - traefik.http.routers.swarmprom-unsee-https.tls.certresolver=le
-      #   - traefik.http.services.swarmprom-unsee.loadbalancer.server.port=8080
-      #   - traefik.http.middlewares.swarmprom-unsee-auth.basicauth.users=${ADMIN_USER?Variable not set}:${HASHED_PASSWORD?Variable not set}
-      #   - traefik.http.routers.swarmprom-unsee-https.middlewares=swarmprom-unsee-auth    
+    networks:
+      - private
+      - traefik-public
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.swarmprom-kibana-http.rule=Host(`kibana.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.swarmprom-kibana-http.entrypoints=http
+        - traefik.http.routers.swarmprom-kibana-http.middlewares=https-redirect
+        - traefik.http.routers.swarmprom-kibana-https.rule=Host(`kibana.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.swarmprom-kibana-https.entrypoints=https
+        - traefik.http.routers.swarmprom-kibana-https.tls=true
+        - traefik.http.routers.swarmprom-kibana-https.tls.certresolver=le
+        - traefik.http.services.swarmprom-kibana.loadbalancer.server.port=5601
+        - traefik.http.middlewares.swarmprom-kibana-auth.basicauth.users=${ADMIN_USER?Variable not set}:${HASHED_PASSWORD?Variable not set}
+        - traefik.http.routers.swarmprom-kibana-https.middlewares=swarmprom-kibana-auth    
         
   logstash:
     image: logstash:8.2.3
     ports:
       - "12201:12201/udp"
-    depends_on:
-      - elasticsearch
+    networks:
+      - private
     deploy:
       mode: global
+    configs:
+      - source: logstash_config
+        target: /usr/share/logstash/pipeline/logstash.conf
     volumes:
       - logstash-pipeline:/usr/share/logstash/pipeline/
 
