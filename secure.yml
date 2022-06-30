@@ -101,13 +101,14 @@ services:
   es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     deploy:
+      resources:
+        limits:
+          cpus: '3'
+          memory: 3000M
       placement:
         constraints:
           - node.role == manager
-        resources:
-          limits:
-            cpus: '3'
-            memory: 3000M
+
     environment:
       # - node.name=es01
       # - cluster.name=${CLUSTER_NAME}
