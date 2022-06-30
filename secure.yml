@@ -7,12 +7,17 @@ version: '3.8'
 configs:
   logstash_config:
     external: true
+  kibana_config:
+    external: true
   # metricbeat_config:
   #   external: true
 
 volumes:
   certs:
+    driver: local
   esdata01:
+    driver: local
+  kibanadata:
     driver: local
   logstash-pipeline:
     driver: local
@@ -29,7 +34,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.role == manager
+          - node.labels.elastic == 1
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
     networks:
@@ -107,7 +112,7 @@ services:
           memory: 3000M
       placement:
         constraints:
-          - node.role == manager
+          - node.labels.elastic == 1
 
     environment:
       # - node.name=es01
@@ -151,13 +156,25 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    configs:
+      - source: kibana_config
+        target: /usr/share/kibana/config/kibana.yml
     networks:
       - private
       - traefik-public
+    volumes:
+      - certs:/usr/share/kibana/config/certs
+      - kibanadata:/usr/share/kibana/data
+    environment:
+      - SERVERNAME=kibana
+      - ELASTICSEARCH_HOSTS=https://es01:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt    
     deploy:
       placement:
         constraints:
-          - node.role == manager
+          - node.labels.elastic == 1
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
@@ -170,8 +187,8 @@ services:
         - traefik.http.routers.swarmprom-kibana-https.tls=true
         - traefik.http.routers.swarmprom-kibana-https.tls.certresolver=le
         - traefik.http.services.swarmprom-kibana.loadbalancer.server.port=5601
-        - traefik.http.middlewares.swarmprom-kibana-auth.basicauth.users=${ADMIN_USER?Variable not set}:${HASHED_PASSWORD?Variable not set}
-        - traefik.http.routers.swarmprom-kibana-https.middlewares=swarmprom-kibana-auth    
+        #- traefik.http.middlewares.swarmprom-kibana-auth.basicauth.users=${ADMIN_USER?Variable not set}:${HASHED_PASSWORD?Variable not set}
+        #- traefik.http.routers.swarmprom-kibana-https.middlewares=swarmprom-kibana-auth    
         
   logstash:
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
