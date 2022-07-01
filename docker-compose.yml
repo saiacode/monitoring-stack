@@ -88,7 +88,7 @@ services:
     deploy:
       mode: global
     environment:
-      - ELASTIC_HOSTS=${ELASTIC_HOSTS}
+      - ELASTIC_HOST=${ELASTIC_HOST}
       - ELASTIC_USER=${ELASTIC_USER}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTIC_FINGERPRINT=${ELASTIC_FINGERPRINT}
@@ -120,7 +120,7 @@ services:
         - traefik.http.services.swarmprom-kibana.loadbalancer.server.port=5601    
     environment:
       - SERVERNAME=kibana
-      - ELASTIC_HOSTS=${ELASTIC_HOSTS}
+      - ELASTIC_HOST=${ELASTIC_HOST}
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
