@@ -134,7 +134,7 @@ services:
     ports:
       - "12201:12201/udp"
     volumes:
-      - certs:/usr/share/logstash/config/certs
+      - certs:/usr/share/logstash/certs
       - logstash_pipeline:/usr/share/logstash/pipeline/
 
   setup:
