@@ -95,26 +95,6 @@ services:
         soft: -1
         hard: -1
 
-  heartbeat:
-    configs:
-      - source: heartbeat_config
-        target: /usr/share/heartbeat/heartbeat.yml
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-    environment:
-      - ELASTIC_HOST=${ELASTIC_HOST}
-      - ELASTIC_USER=${ELASTIC_USER}
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_FINGERPRINT=${ELASTIC_FINGERPRINT}
-      - HEARTBEAT_URLS=${HEARTBEAT_URLS}
-      - KIBANA_PUBLIC_URL=https://kibana.${DOMAIN}
-    image: docker.elastic.co/beats/heartbeat:${STACK_VERSION}
-    networks:
-      - private
-    user: ${HEARTBEAT_USER}
-
   kibana:
     configs:
       - source: kibana_config
