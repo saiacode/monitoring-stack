@@ -18,6 +18,6 @@ output.elasticsearch:
   ssl.ca_trusted_fingerprint: '${ELASTIC_FINGERPRINT}'
 
 setup.kibana:
-  host: ${KIBANA_HOST}
+  host: ${KIBANA_PUBLIC_URL}
   username: '${ELASTIC_USER}'  
   password: '${ELASTIC_PASSWORD}'
