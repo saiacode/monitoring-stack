@@ -1,8 +1,8 @@
 # Kibana config file
-server.host: "${KIBANA_HOST}"
+server.host: ${KIBANA_HOST}
 server.publicBaseUrl: "${KIBANA_PUBLIC_URL}"
 server.shutdownTimeout: "5s"
-elasticsearch.hosts: "${ELASTIC_HOSTS}"
+elasticsearch.hosts: ${ELASTIC_HOSTS}
 monitoring.ui.container.elasticsearch.enabled: true
 xpack.security.encryptionKey: "${KIBANA_SECURITY_ENCRYPTION_KEY}"
 xpack.reporting.encryptionKey: "${KIBANA_REPORTING_ENCRYPTION_KEY}"
