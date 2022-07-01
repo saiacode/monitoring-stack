@@ -36,19 +36,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.labels.elastic == 1
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.elasticsearch-http.rule=Host(`elasticsearch.${DOMAIN?Variable not set}`)
-        - traefik.http.routers.elasticsearch-http.entrypoints=http
-        - traefik.http.routers.elasticsearch-http.middlewares=https-redirect
-        - traefik.http.routers.elasticsearch-https.rule=Host(`elasticsearch.${DOMAIN?Variable not set}`)
-        - traefik.http.routers.elasticsearch-https.entrypoints=https
-        - traefik.http.routers.elasticsearch-https.tls=true
-        - traefik.http.routers.elasticsearch-https.tls.certresolver=le
-        - traefik.http.services.elasticsearch.loadbalancer.server.port=9200      
+          - node.labels.elastic == 1   
       resources:
         limits:
           cpus: '3'
@@ -146,6 +134,7 @@ services:
     ports:
       - "12201:12201/udp"
     volumes:
+      - certs:/usr/share/logstash/config/certs
       - logstash_pipeline:/usr/share/logstash/pipeline/
 
   setup:
