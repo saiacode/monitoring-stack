@@ -36,7 +36,19 @@ services:
     deploy:
       placement:
         constraints:
-          - node.labels.elastic == 1      
+          - node.labels.elastic == 1
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.elasticsearch-http.rule=Host(`elasticsearch.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.elasticsearch-http.entrypoints=http
+        - traefik.http.routers.elasticsearch-http.middlewares=https-redirect
+        - traefik.http.routers.elasticsearch-https.rule=Host(`elasticsearch.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.elasticsearch-https.entrypoints=https
+        - traefik.http.routers.elasticsearch-https.tls=true
+        - traefik.http.routers.elasticsearch-https.tls.certresolver=le
+        - traefik.http.services.elasticsearch.loadbalancer.server.port=9200      
       resources:
         limits:
           cpus: '3'
@@ -115,14 +127,14 @@ services:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.swarmprom-kibana-http.rule=Host(`kibana.${DOMAIN?Variable not set}`)
-        - traefik.http.routers.swarmprom-kibana-http.entrypoints=http
-        - traefik.http.routers.swarmprom-kibana-http.middlewares=https-redirect
-        - traefik.http.routers.swarmprom-kibana-https.rule=Host(`kibana.${DOMAIN?Variable not set}`)
-        - traefik.http.routers.swarmprom-kibana-https.entrypoints=https
-        - traefik.http.routers.swarmprom-kibana-https.tls=true
-        - traefik.http.routers.swarmprom-kibana-https.tls.certresolver=le
-        - traefik.http.services.swarmprom-kibana.loadbalancer.server.port=5601    
+        - traefik.http.routers.kibana-http.rule=Host(`kibana.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.kibana-http.entrypoints=http
+        - traefik.http.routers.kibana-http.middlewares=https-redirect
+        - traefik.http.routers.kibana-https.rule=Host(`kibana.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.kibana-https.entrypoints=https
+        - traefik.http.routers.kibana-https.tls=true
+        - traefik.http.routers.kibana-https.tls.certresolver=le
+        - traefik.http.services.kibana.loadbalancer.server.port=5601    
     environment:
       - SERVERNAME=kibana
       - ELASTIC_HOST=${ELASTIC_HOST}
