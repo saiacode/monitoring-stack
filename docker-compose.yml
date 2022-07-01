@@ -73,6 +73,8 @@ services:
     networks:
       - private
       - public
+    ports:
+      - ${ELASTIC_PORT}:9200
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - elasticsearch_data:/usr/share/elasticsearch/data
