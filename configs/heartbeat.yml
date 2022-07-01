@@ -1,3 +1,5 @@
+# Hearbeat config file
+
 hearbeat.monitors:
   - type: http
     schedule: '@every 5s'
