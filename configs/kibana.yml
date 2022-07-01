@@ -1,6 +1,6 @@
 # Kibana config file
-server.host: ${KIBANA_HOST}
-server.publicBaseUrl: ${KIBANA_PUBLIC_URL}
+server.host: "${KIBANA_HOST}"
+server.publicBaseUrl: "${KIBANA_PUBLIC_URL}"
 server.shutdownTimeout: "5s"
 elasticsearch.hosts: "${ELASTIC_HOSTS}"
 monitoring.ui.container.elasticsearch.enabled: true
