@@ -86,7 +86,9 @@ services:
       - source: heartbeat_config
         target: /usr/share/heartbeat/heartbeat.yml
     deploy:
-      mode: global
+      placement:
+        constraints:
+          - node.role == manager
     environment:
       - ELASTIC_HOST=${ELASTIC_HOST}
       - ELASTIC_USER=${ELASTIC_USER}
@@ -123,7 +125,7 @@ services:
       - ELASTIC_HOST=${ELASTIC_HOST}
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=${ELASTIC_SSL_CERTIFICATEAUTHORITIES}
       - KIBANA_HOST=${KIBANA_HOST}
       - KIBANA_PUBLIC_URL=https://kibana.${DOMAIN}
       - KIBANA_SECURITY_ENCRYPTION_KEY=${KIBANA_SECURITY_ENCRYPTION_KEY}
