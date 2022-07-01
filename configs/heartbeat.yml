@@ -1,0 +1,19 @@
+hearbeat.monitors:
+  - type: http
+    schedule: '@every 5s'
+    urls: '${HEARTBEAT_URLS}'
+
+  - type: icmp
+    schedule: '@every 5s'
+    urls:
+      - elasticsearch
+      - kibana
+
+output.elasticsearch:
+  hosts: '${ELASTIC_HOSTS}'
+  username: '${ELASTIC_USER}'
+  password: '${ELASTIC_PASSWORD}'
+  ssl.ca_trusted_fingerprint: '${ELASTIC_FINGERPRINT}'
+
+setup.kibana:
+  host: ${KIBANA_HOST}

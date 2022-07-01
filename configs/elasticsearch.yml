@@ -1,0 +1,2 @@
+cluster.name: ${ELASTIC_CLUSTER_NAME}
+network.host: ${ELASTIC_NETWORK_HOST}

@@ -1,0 +1,196 @@
+# Elasticsearch monitoring stack for docker swarm
+
+
+version: '3.8'
+
+
+configs:
+  logstash_config:
+    external: true
+  kibana_config:
+    external: true
+  heartbeat_config:
+    external: true
+
+
+volumes:
+  certs:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  kibana_data:
+    driver: local
+  logstash_pipeline:
+    driver: local
+
+
+networks:
+  private:
+  public:
+  traefik-public:
+    external: true
+
+
+services:
+  elasticsearch:
+    deploy:
+      placement:
+        constraints:
+          - node.labels.elastic == 1      
+      resources:
+        limits:
+          cpus: '3'
+          memory: 3000M
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_CLUSTER_NAME=${ELASTIC_CLUSTER_NAME}
+      - ELASTIC_NETWORK_HOST=${ELASTIC_NETWORK_HOST}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=certs/elasticsearch/elasticsearch.key
+      - xpack.security.http.ssl.certificate=certs/elasticsearch/elasticsearch.crt
+      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.http.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.key=certs/elasticsearch/elasticsearch.key
+      - xpack.security.transport.ssl.certificate=certs/elasticsearch/elasticsearch.crt
+      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.license.self_generated.type=${LICENSE}   
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    networks:
+      - private
+      - public
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  heartbeat:
+    configs:
+      - source: heartbeat_config
+        target: /usr/share/heartbeat/heartbeat.yml
+    deploy:
+      mode: global
+    environment:
+      - ELASTIC_HOSTS=${ELASTIC_HOSTS}
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_FINGERPRINT=${ELASTIC_FINGERPRINT}
+      - HEARTBEAT_URLS=${HEARTBEAT_URLS}
+    image: docker.elastic.co/beats/heartbeat:${STACK_VERSION}
+    networks:
+      - private
+    user: ${HEARTBEAT_USER}
+
+  kibana:
+    configs:
+      - source: kibana_config
+        target: /usr/share/kibana/config/kibana.yml
+    deploy:
+      placement:
+        constraints:
+          - node.labels.elastic == 1
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.swarmprom-kibana-http.rule=Host(`kibana.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.swarmprom-kibana-http.entrypoints=http
+        - traefik.http.routers.swarmprom-kibana-http.middlewares=https-redirect
+        - traefik.http.routers.swarmprom-kibana-https.rule=Host(`kibana.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.swarmprom-kibana-https.entrypoints=https
+        - traefik.http.routers.swarmprom-kibana-https.tls=true
+        - traefik.http.routers.swarmprom-kibana-https.tls.certresolver=le
+        - traefik.http.services.swarmprom-kibana.loadbalancer.server.port=5601    
+    environment:
+      - SERVERNAME=kibana
+      - ELASTIC_HOSTS=${ELASTIC_HOSTS}
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - KIBANA_HOST=${KIBANA_HOST}
+      - KIBANA_PUBLIC_URL=${KIBANA_PUBLIC_URL}
+      - KIBANA_SECURITY_ENCRYPTION_KEY=${KIBANA_SECURITY_ENCRYPTION_KEY}
+      - KIBANA_REPORTING_ENCRYPTION_KEY=${KIBANA_REPORTING_ENCRYPTION_KEY}
+      - KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY=${KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY}
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    networks:
+      - private
+      - traefik-public
+    volumes:
+      - certs:/usr/share/kibana/config/certs
+      - kibana_data:/usr/share/kibana/data
+        
+  logstash:
+    configs:
+      - source: logstash_config
+        target: /usr/share/logstash/pipeline/logstash.conf
+    deploy:
+      mode: global
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
+    networks:
+      - private
+    ports:
+      - "12201:12201/udp"
+    volumes:
+      - logstash_pipeline:/usr/share/logstash/pipeline/
+
+  setup:
+    command: >
+      bash -c '
+        if [ ! -f config/certs/ca.zip ]; then
+            echo "Creating CA";
+            bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
+            unzip config/certs/ca.zip -d config/certs;
+        fi;
+        if [ ! -f config/certs/certs.zip ]; then
+            echo "Creating certs";
+            echo -ne \
+            "instances:\n"\
+            "  - name: elasticsearch\n"\
+            "    dns:\n"\
+            "      - elasticsearch\n"\
+            "      - localhost\n"\
+            "    ip:\n"\
+            "      - 127.0.0.1\n"\
+            > config/certs/instances.yml;
+            bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
+            unzip config/certs/certs.zip -d config/certs;
+        fi;
+        echo "Setting file permissions"
+        chown -R root:root config/certs;
+        find . -type d -exec chmod 750 \{\} \;;
+        find . -type f -exec chmod 640 \{\} \;;
+        echo "Waiting for Elasticsearch availability";
+        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        echo "All done!";
+      '  
+    deploy:
+      placement:
+        constraints:
+          - node.labels.elastic == 1
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    networks:
+      - private  
+    user: "0" 
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs 
+
