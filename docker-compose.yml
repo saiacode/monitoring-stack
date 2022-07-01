@@ -95,6 +95,7 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTIC_FINGERPRINT=${ELASTIC_FINGERPRINT}
       - HEARTBEAT_URLS=${HEARTBEAT_URLS}
+      - KIBANA_PUBLIC_URL=https://kibana.${DOMAIN}
     image: docker.elastic.co/beats/heartbeat:${STACK_VERSION}
     networks:
       - private
