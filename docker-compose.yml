@@ -34,18 +34,6 @@ networks:
 services:
   elasticsearch:
     deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.elasticsearch-http.rule=Host(`elasticsearch.${DOMAIN?Variable not set}`)
-        - traefik.http.routers.elasticsearch-http.entrypoints=http
-        - traefik.http.routers.elasticsearch-http.middlewares=https-redirect
-        - traefik.http.routers.elasticsearch-https.rule=Host(`elasticsearch.${DOMAIN?Variable not set}`)
-        - traefik.http.routers.elasticsearch-https.entrypoints=https
-        - traefik.http.routers.elasticsearch-https.tls=true
-        - traefik.http.routers.elasticsearch-https.tls.certresolver=le
-        - traefik.http.services.elasticsearch.loadbalancer.server.port=9200    
       placement:
         constraints:
           - node.labels.elasticsearch == 1   
