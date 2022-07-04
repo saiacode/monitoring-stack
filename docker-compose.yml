@@ -11,6 +11,8 @@ configs:
     external: true
   heartbeat_config:
     external: true
+  elasticsearch_config:
+    external: true
 
 
 volumes:
@@ -33,6 +35,9 @@ networks:
 
 services:
   elasticsearch:
+    configs:
+      - source: elasticsearch_config
+        target: /usr/share/elasticsearch/config/elasticsearch.yml    
     deploy:
       placement:
         constraints:
