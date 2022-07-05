@@ -123,9 +123,10 @@ services:
       - kibana_data:/usr/share/kibana/data
         
   logstash:
+    command: ["/bin/logstash", "-f", "/usr/share/logstash/config/logstash.conf"]
     configs:
       - source: logstash_config
-        target: /usr/share/logstash/pipeline/logstash.conf
+        target: /usr/share/logstash/config/logstash.conf
     deploy:
       mode: global
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
@@ -137,6 +138,7 @@ services:
       - "12201:12201/udp"
     volumes:
       - logstash_pipeline:/usr/share/logstash/pipeline/
+      - certs:/usr/share/logstash/config/certs
 
   setup:
     command: >
