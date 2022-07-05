@@ -39,7 +39,7 @@ services:
           - node.labels.elasticsearch == 1   
       resources:
         limits:
-          cpus: '3'
+          cpus: '1.6'
           memory: 3000M
     environment:
       - discovery.type=single-node
