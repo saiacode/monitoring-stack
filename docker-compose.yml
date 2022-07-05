@@ -123,7 +123,7 @@ services:
       - kibana_data:/usr/share/kibana/data
         
   logstash:
-    command: ["/bin/logstash", "-f", "/usr/share/logstash/config/logstash.conf"]
+    command: ["bin/logstash", "-f", "/usr/share/logstash/config/logstash.conf"]
     configs:
       - source: logstash_config
         target: /usr/share/logstash/config/logstash.conf
