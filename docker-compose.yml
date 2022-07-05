@@ -131,6 +131,8 @@ services:
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
     networks:
       - private
+    # Tuve el problema que el usuario logstash no podia acceder a los certs
+    user: root:root
     ports:
       - "12201:12201/udp"
     volumes:
