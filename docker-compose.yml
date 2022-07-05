@@ -128,7 +128,10 @@ services:
       - source: logstash_config
         target: /usr/share/logstash/config/logstash.conf
     deploy:
-      mode: global
+      #mode: global
+      placement:
+        constraints:
+          - node.labels.elasticsearch == 1       
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
     networks:
       - private
